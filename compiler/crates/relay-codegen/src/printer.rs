@@ -364,12 +364,15 @@ impl<'b> JSONPrinter<'b> {
             let mut visited = Default::default();
             self.collect_value_duplicates(&mut visited, root_key);
         }
-        let mut result = String::new();
+        // Pre-allocate result String to reduce reallocations during printing
+        let mut result = String::with_capacity(4096);
         self.print_ast(&mut result, root_key, 0, false);
         if self.variable_definitions.is_empty() {
             result
         } else {
-            let mut with_variables = String::new();
+            // Pre-allocate with_variables based on result size plus overhead for wrapper
+            let mut with_variables =
+                String::with_capacity(result.len() + self.variable_definitions.len() * 64 + 64);
             with_variables.push_str("(function(){\nvar ");
             let last = self.variable_definitions.len() - 1;
             for (i, (_, value)) in self.variable_definitions.drain(..).enumerate() {
@@ -438,7 +441,8 @@ impl<'b> JSONPrinter<'b> {
             let v = if let Some(index) = self.variable_definitions.get_index_of(&key) {
                 index
             } else {
-                let mut variable = String::new();
+                // Pre-allocate variable String to reduce reallocations
+                let mut variable = String::with_capacity(256);
                 self.print_ast(&mut variable, key, 0, true);
                 let v = self.variable_definitions.len();
                 self.variable_definitions.insert(key, variable);
