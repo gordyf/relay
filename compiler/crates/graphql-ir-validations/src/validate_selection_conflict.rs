@@ -561,9 +561,20 @@ mod ignoring_type_and_location {
     /// and values. Notably, this ignores the types of arguments and values,
     /// which may not always be inferred identically.
     pub fn arguments_equals<B: LocationAgnosticBehavior>(a: &[Argument], b: &[Argument]) -> bool {
-        order_agnostic_slice_equals(a, b, |a, b| {
-            a.name.item.0.location_agnostic_eq::<B>(&b.name.item.0)
-                && value_equals::<B>(&a.value.item, &b.value.item)
+        if a.len() != b.len() {
+            return false;
+        }
+        if a.is_empty() {
+            return true;
+        }
+        // Use HashMap for O(n) comparison instead of O(n²)
+        // Arguments are uniquely identified by name within a list
+        let b_by_name: std::collections::HashMap<_, _> =
+            b.iter().map(|arg| (arg.name.item.0, &arg.value.item)).collect();
+        a.iter().all(|arg_a| {
+            b_by_name
+                .get(&arg_a.name.item.0)
+                .is_some_and(|value_b| value_equals::<B>(&arg_a.value.item, value_b))
         })
     }
 
@@ -576,27 +587,6 @@ mod ignoring_type_and_location {
             (Value::List(a), Value::List(b)) => slice_equals(a, b, value_equals::<B>),
             (Value::Object(a), Value::Object(b)) => arguments_equals::<B>(a, b),
             _ => false,
-        }
-    }
-
-    fn order_agnostic_slice_equals<T, F>(a: &[T], b: &[T], eq: F) -> bool
-    where
-        F: Fn(&T, &T) -> bool,
-    {
-        if a.len() != b.len() {
-            false
-        } else {
-            let len = a.len();
-            let mut matched = vec![false; len];
-            for l in a {
-                for i in 0..len {
-                    if !matched[i] && eq(l, &b[i]) {
-                        matched[i] = true;
-                        break;
-                    }
-                }
-            }
-            matched.into_iter().all(|v| v)
         }
     }
 
