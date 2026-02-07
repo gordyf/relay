@@ -434,8 +434,9 @@ impl<'b> JSONPrinter<'b> {
     fn print_ast(&mut self, f: &mut String, key: AstKey, indent: usize, is_dedupe_var: bool) {
         // Only use variable references at depth beyond the top level.
         if indent > 0 && self.duplicates.contains(&key) {
-            let v = if self.variable_definitions.contains_key(&key) {
-                self.variable_definitions.get_full(&key).unwrap().0
+            // Use get_index_of to avoid double lookup (contains_key + get_full)
+            let v = if let Some(index) = self.variable_definitions.get_index_of(&key) {
+                index
             } else {
                 let mut variable = String::new();
                 self.print_ast(&mut variable, key, 0, true);
