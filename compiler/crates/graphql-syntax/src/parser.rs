@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::collections::VecDeque;
-
 use common::Diagnostic;
 use common::DiagnosticsResult;
 use common::Location;
@@ -1420,7 +1418,8 @@ impl<'a> Parser<'a> {
             TokenKind::StringLiteral => {
                 let token = self.parse_token();
                 let source = self.source(&token);
-                let value = source[1..source.len() - 1].to_string().intern();
+                // Intern directly from &str slice to avoid intermediate String allocation
+                let value = source[1..source.len() - 1].intern();
                 Some(StringNode { token, value })
             }
             TokenKind::BlockStringLiteral => {
@@ -1452,7 +1451,8 @@ impl<'a> Parser<'a> {
             TokenKind::StringLiteral => {
                 let token = self.parse_token();
                 let source = self.source(&token);
-                let value = source[1..source.len() - 1].to_string().intern();
+                // Intern directly from &str slice to avoid intermediate String allocation
+                let value = source[1..source.len() - 1].intern();
                 Some(StringNode { token, value })
             }
             TokenKind::BlockStringLiteral => {
@@ -2587,11 +2587,9 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_string_literal(&self, token: Token, source: &str) -> StringNode {
-        let value = source[1..source.len() - 1].to_string();
-        StringNode {
-            token,
-            value: value.intern(),
-        }
+        // Intern directly from &str slice to avoid intermediate String allocation
+        let value = source[1..source.len() - 1].intern();
+        StringNode { token, value }
     }
 
     /// IntValue
@@ -3067,33 +3065,41 @@ fn clean_block_string_literal(source: &str) -> String {
     let inner = &source[3..source.len() - 3];
     let common_indent = get_common_indent(inner);
 
-    let mut formatted_lines = inner
+    // Collect line slices with indent removed, avoiding intermediate String allocations
+    let lines: Vec<&str> = inner
         .lines()
         .enumerate()
         .map(|(i, line)| {
             if i == 0 {
-                line.to_string()
+                line
             } else {
-                line.chars().skip(common_indent).collect::<String>()
+                // Skip common_indent bytes, but handle lines shorter than common_indent
+                let skip_bytes = line
+                    .char_indices()
+                    .nth(common_indent)
+                    .map(|(idx, _)| idx)
+                    .unwrap_or(line.len());
+                &line[skip_bytes..]
             }
         })
-        .collect::<VecDeque<String>>();
+        .collect();
 
-    while formatted_lines
-        .front()
-        .is_some_and(|line| line_is_whitespace(line))
-    {
-        formatted_lines.pop_front();
-    }
-    while formatted_lines
-        .back()
-        .is_some_and(|line| line_is_whitespace(line))
-    {
-        formatted_lines.pop_back();
+    // Find first and last non-whitespace lines
+    let start = lines
+        .iter()
+        .position(|line| !line_is_whitespace(line))
+        .unwrap_or(lines.len());
+    let end = lines
+        .iter()
+        .rposition(|line| !line_is_whitespace(line))
+        .map(|i| i + 1)
+        .unwrap_or(0);
+
+    if start >= end {
+        return String::new();
     }
 
-    let lines_vec: Vec<String> = formatted_lines.into_iter().collect();
-    lines_vec.join("\n")
+    lines[start..end].join("\n")
 }
 
 fn get_common_indent(source: &str) -> usize {
