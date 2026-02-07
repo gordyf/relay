@@ -344,10 +344,11 @@ impl<'b> JSONPrinter<'b> {
         project_config: &ProjectConfig,
         top_level_statements: &'b mut TopLevelStatements,
     ) -> Self {
+        // Pre-allocate maps with reasonable capacity to reduce rehashing
         Self {
-            variable_definitions: Default::default(),
+            variable_definitions: IndexMap::with_capacity_and_hasher(16, FnvBuildHasher::default()),
             top_level_statements,
-            duplicates: Default::default(),
+            duplicates: FnvHashSet::with_capacity_and_hasher(32, Default::default()),
             builder,
             js_module_format: project_config.js_module_format,
             relativize_js_module_paths: project_config.relativize_js_module_paths,
