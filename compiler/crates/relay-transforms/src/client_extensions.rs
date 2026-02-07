@@ -11,6 +11,7 @@ use common::DirectiveName;
 use common::Location;
 use common::WithLocation;
 use fnv::FnvHashMap;
+use fnv::FnvHashSet;
 use graphql_ir::Directive;
 use graphql_ir::InlineFragment;
 use graphql_ir::LinkedField;
@@ -22,6 +23,7 @@ use graphql_ir::TransformedValue;
 use graphql_ir::Transformer;
 use intern::string_key::Intern;
 use lazy_static::lazy_static;
+use schema::FieldID;
 use schema::Schema;
 
 use crate::ClientEdgeMetadata;
@@ -46,6 +48,10 @@ lazy_static! {
 struct ClientExtensionsTransform<'program> {
     program: &'program Program,
     seen: Seen<'program>,
+    /// Cache of field IDs that are extensions to avoid repeated schema lookups
+    extension_fields: FnvHashSet<FieldID>,
+    /// Cache of field IDs that are NOT extensions
+    non_extension_fields: FnvHashSet<FieldID>,
 }
 
 impl<'program> ClientExtensionsTransform<'program> {
@@ -55,7 +61,26 @@ impl<'program> ClientExtensionsTransform<'program> {
         Self {
             program,
             seen: FnvHashMap::with_capacity_and_hasher(capacity, Default::default()),
+            extension_fields: FnvHashSet::default(),
+            non_extension_fields: FnvHashSet::default(),
         }
+    }
+
+    /// Check if a field is an extension, caching the result to avoid repeated schema lookups
+    fn is_extension_field(&mut self, field_id: FieldID) -> bool {
+        if self.extension_fields.contains(&field_id) {
+            return true;
+        }
+        if self.non_extension_fields.contains(&field_id) {
+            return false;
+        }
+        let is_extension = self.program.schema.field(field_id).is_extension;
+        if is_extension {
+            self.extension_fields.insert(field_id);
+        } else {
+            self.non_extension_fields.insert(field_id);
+        }
+        is_extension
     }
 
     fn transform_client_edge(
@@ -186,12 +211,7 @@ impl<'a> Transformer<'a> for ClientExtensionsTransform<'a> {
     }
 
     fn transform_linked_field(&mut self, field: &'a LinkedField) -> Transformed<Selection> {
-        if self
-            .program
-            .schema
-            .field(field.definition.item)
-            .is_extension
-        {
+        if self.is_extension_field(field.definition.item) {
             Transformed::Delete
         } else {
             self.default_transform_linked_field(field)
@@ -199,12 +219,7 @@ impl<'a> Transformer<'a> for ClientExtensionsTransform<'a> {
     }
 
     fn transform_scalar_field(&mut self, field: &ScalarField) -> Transformed<Selection> {
-        if self
-            .program
-            .schema
-            .field(field.definition.item)
-            .is_extension
-        {
+        if self.is_extension_field(field.definition.item) {
             Transformed::Delete
         } else {
             Transformed::Keep
