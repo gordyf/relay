@@ -12,7 +12,7 @@ use common::DiagnosticsResult;
 use common::NamedItem;
 use common::PointerAddress;
 use common::sync::*;
-use fnv::FnvHashMap;
+use dashmap::DashMap;
 use graphql_ir::Condition;
 use graphql_ir::Directive;
 use graphql_ir::FragmentDefinition;
@@ -26,7 +26,6 @@ use graphql_ir::TransformedValue;
 use graphql_ir::node_identifier::LocationAgnosticPartialEq;
 use graphql_ir::node_identifier::NodeIdentifier;
 use parking_lot::Mutex;
-use parking_lot::RwLock;
 use schema::SDLSchema;
 use schema::Schema;
 use schema::Type;
@@ -39,9 +38,8 @@ use crate::handle_fields::KEY_ARG_NAME;
 use crate::util::CustomMetadataDirectives;
 use crate::util::is_relay_custom_inline_fragment_directive;
 
-type SeenLinkedFields = Arc<RwLock<FnvHashMap<PointerAddress, TransformedValue<Arc<LinkedField>>>>>;
-type SeenInlineFragments =
-    Arc<RwLock<FnvHashMap<(PointerAddress, Type), TransformedValue<Arc<InlineFragment>>>>>;
+type SeenLinkedFields = DashMap<PointerAddress, TransformedValue<Arc<LinkedField>>>;
+type SeenInlineFragments = DashMap<(PointerAddress, Type), TransformedValue<Arc<InlineFragment>>>;
 
 /// Transform that flattens inline fragments, fragment spreads, merges linked fields selections.
 ///
@@ -73,6 +71,7 @@ pub fn flatten(
         fragment_for_validation,
         is_for_codegen,
         should_validate_fragment_spreads,
+        program,
     );
     let errors = Arc::new(Mutex::new(Vec::new()));
 
@@ -109,14 +108,17 @@ impl FlattenTransform {
         fragments: FragmentDefinitionNameMap<Arc<FragmentDefinition>>,
         is_for_codegen: bool,
         should_validate_fragment_spreads: bool,
+        program: &Program,
     ) -> Self {
+        // Pre-size the caches based on program size to reduce rehashing
+        let capacity = program.operations.len() + program.fragments.len();
         Self {
             schema,
             fragments,
             is_for_codegen,
             should_validate_fragment_spreads,
-            seen_linked_fields: Default::default(),
-            seen_inline_fragments: Default::default(),
+            seen_linked_fields: DashMap::with_capacity(capacity),
+            seen_inline_fragments: DashMap::with_capacity(capacity),
         }
     }
 
@@ -197,8 +199,7 @@ impl FlattenTransform {
         let should_cache = Arc::strong_count(linked_field) > 1;
         let key = PointerAddress::new(Arc::as_ref(linked_field));
         if should_cache {
-            let seen_linked_fields = self.seen_linked_fields.read();
-            if let Some(prev) = seen_linked_fields.get(&key) {
+            if let Some(prev) = self.seen_linked_fields.get(&key) {
                 return Ok(prev.clone());
             }
         }
@@ -219,12 +220,10 @@ impl FlattenTransform {
                 })
             });
         if should_cache {
-            let mut seen_linked_fields = self.seen_linked_fields.write();
-            // If another thread computed this in the meantime, use that result
-            if let Some(prev) = seen_linked_fields.get(&key) {
-                return Ok(prev.clone());
-            }
-            seen_linked_fields.insert(key, result.clone());
+            // Use entry API for atomic insert-if-not-exists
+            self.seen_linked_fields
+                .entry(key)
+                .or_insert_with(|| result.clone());
         }
         Ok(result)
     }
@@ -237,8 +236,7 @@ impl FlattenTransform {
         let should_cache = Arc::strong_count(fragment) > 1;
         let key = (PointerAddress::new(Arc::as_ref(fragment)), parent_type);
         if should_cache {
-            let seen_inline_fragments = self.seen_inline_fragments.read();
-            if let Some(prev) = seen_inline_fragments.get(&key) {
+            if let Some(prev) = self.seen_inline_fragments.get(&key) {
                 return Ok(prev.clone());
             }
         }
@@ -257,12 +255,10 @@ impl FlattenTransform {
                 })
             });
         if should_cache {
-            let mut seen_inline_fragments = self.seen_inline_fragments.write();
-            // If another thread computed this in the meantime, use that result
-            if let Some(prev) = seen_inline_fragments.get(&key) {
-                return Ok(prev.clone());
-            }
-            seen_inline_fragments.insert(key, result.clone());
+            // Use entry API for atomic insert-if-not-exists
+            self.seen_inline_fragments
+                .entry(key)
+                .or_insert_with(|| result.clone());
         }
         Ok(result)
     }
