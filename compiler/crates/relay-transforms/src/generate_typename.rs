@@ -57,9 +57,11 @@ struct GenerateTypenameTransform<'s> {
 
 impl<'s> GenerateTypenameTransform<'s> {
     fn new(program: &'s Program, is_for_codegen: bool) -> Self {
+        // Pre-size cache based on program size to reduce rehashing
+        let capacity = program.operations.len() + program.fragments.len();
         Self {
             program,
-            seen: Default::default(),
+            seen: FnvHashMap::with_capacity_and_hasher(capacity, Default::default()),
             is_for_codegen,
             parent_type: None,
         }

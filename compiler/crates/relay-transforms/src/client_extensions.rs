@@ -50,9 +50,11 @@ struct ClientExtensionsTransform<'program> {
 
 impl<'program> ClientExtensionsTransform<'program> {
     fn new(program: &'program Program) -> Self {
+        // Pre-size cache based on program size to reduce rehashing
+        let capacity = program.operations.len() + program.fragments.len();
         Self {
             program,
-            seen: Default::default(),
+            seen: FnvHashMap::with_capacity_and_hasher(capacity, Default::default()),
         }
     }
 

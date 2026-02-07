@@ -72,9 +72,11 @@ struct InlineFragmentsTransform<'s> {
 
 impl<'s> InlineFragmentsTransform<'s> {
     fn new(program: &'s Program, remove_fragments: bool) -> Self {
+        // Pre-size cache based on fragment count to reduce rehashing
+        let capacity = program.fragments.len();
         Self {
             program,
-            seen: Default::default(),
+            seen: FnvHashMap::with_capacity_and_hasher(capacity, Default::default()),
             remove_fragments,
         }
     }

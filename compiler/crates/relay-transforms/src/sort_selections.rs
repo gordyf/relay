@@ -36,8 +36,10 @@ struct SortSelectionsTransform<'s> {
 
 impl<'s> SortSelectionsTransform<'s> {
     pub fn new(program: &'s Program) -> Self {
+        // Pre-size cache based on program size to reduce rehashing
+        let capacity = program.operations.len() + program.fragments.len();
         Self {
-            seen: Default::default(),
+            seen: HashMap::with_capacity(capacity),
             program,
         }
     }
