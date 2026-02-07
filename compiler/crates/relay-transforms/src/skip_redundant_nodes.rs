@@ -142,9 +142,11 @@ pub struct SkipRedundantNodesTransform {
 
 impl SkipRedundantNodesTransform {
     fn new(program: &'_ Program, defer_stream_interface: DeferStreamInterface) -> Self {
+        // Pre-size the cache based on program size to reduce rehashing
+        let capacity = program.operations.len() + program.fragments.len();
         Self {
             schema: Arc::clone(&program.schema),
-            cache: DashMap::new(),
+            cache: DashMap::with_capacity(capacity),
             defer_stream_interface,
         }
     }
