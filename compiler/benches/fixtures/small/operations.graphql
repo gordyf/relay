@@ -1,0 +1,293 @@
+# Benchmark fixtures - 100 operations
+# Auto-generated for performance testing
+
+query SmallBenchmarkQuery0($id: ID!) {
+  node(id: $id) {
+    id
+    ... on User {
+      name
+      firstName
+      profilePicture(size: 100) { uri width height }
+    }
+  }
+}
+
+query SmallBenchmarkQuery1($id: ID!, $first: Int!) {
+  node(id: $id) {
+    id
+    ... on User {
+      name
+      friends(first: $first) { edges { node { id name } } }
+    }
+  }
+}
+
+query SmallBenchmarkQuery2($id: ID!) {
+  node(id: $id) {
+    id
+    ... on User { name lastName email }
+  }
+}
+
+query SmallBenchmarkQuery3($id: ID!, $size: [Int]) {
+  node(id: $id) {
+    id
+    ... on User {
+      profilePicture(size: $size) { uri width height }
+    }
+  }
+}
+
+query SmallBenchmarkQuery4($id: ID!) {
+  node(id: $id) {
+    id
+    ... on User {
+      name
+      birthdate { year month day }
+    }
+  }
+}
+
+fragment SmallBenchmarkFragment0 on User {
+  id
+  name
+  firstName
+  lastName
+}
+
+fragment SmallBenchmarkFragment1 on User {
+  id
+  profilePicture(size: 100) {
+    uri
+    width
+    height
+  }
+}
+
+fragment SmallBenchmarkFragment2 on User {
+  id
+  friends(first: 10) {
+    edges {
+      node {
+        id
+        name
+      }
+    }
+  }
+}
+
+fragment SmallBenchmarkFragment3 on User {
+  id
+  name
+  ...SmallBenchmarkFragment0
+}
+
+fragment SmallBenchmarkFragment4 on User {
+  id
+  ...SmallBenchmarkFragment1
+  ...SmallBenchmarkFragment2
+}
+
+query SmallBenchmarkQuery5($id: ID!) {
+  node(id: $id) {
+    id
+    ... on User {
+      ...SmallBenchmarkFragment0
+    }
+  }
+}
+
+query SmallBenchmarkQuery6($id: ID!) {
+  node(id: $id) {
+    id
+    ... on User {
+      ...SmallBenchmarkFragment1
+      ...SmallBenchmarkFragment2
+    }
+  }
+}
+
+query SmallBenchmarkQuery7($id: ID!) {
+  node(id: $id) {
+    id
+    ... on User {
+      name
+      ...SmallBenchmarkFragment3
+    }
+  }
+}
+
+query SmallBenchmarkQuery8($id: ID!) {
+  node(id: $id) {
+    id
+    ... on User {
+      ...SmallBenchmarkFragment4
+    }
+  }
+}
+
+query SmallBenchmarkQuery9($id: ID!, $first: Int!, $after: ID) {
+  node(id: $id) {
+    id
+    ... on User {
+      friends(first: $first, after: $after) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        edges {
+          cursor
+          node {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+}
+
+fragment SmallBenchmarkFragment5 on User {
+  id
+  name
+  email
+  websites
+}
+
+fragment SmallBenchmarkFragment6 on User {
+  id
+  birthdate {
+    year
+    month
+    day
+  }
+}
+
+fragment SmallBenchmarkFragment7 on User {
+  id
+  hometown {
+    id
+    name
+  }
+}
+
+fragment SmallBenchmarkFragment8 on User {
+  id
+  screennames {
+    name
+    service
+  }
+}
+
+fragment SmallBenchmarkFragment9 on User {
+  id
+  ...SmallBenchmarkFragment5
+  ...SmallBenchmarkFragment6
+  ...SmallBenchmarkFragment7
+}
+
+query SmallBenchmarkQuery10($id: ID!) {
+  node(id: $id) { id ... on User { ...SmallBenchmarkFragment5 } }
+}
+
+query SmallBenchmarkQuery11($id: ID!) {
+  node(id: $id) { id ... on User { ...SmallBenchmarkFragment6 } }
+}
+
+query SmallBenchmarkQuery12($id: ID!) {
+  node(id: $id) { id ... on User { ...SmallBenchmarkFragment7 } }
+}
+
+query SmallBenchmarkQuery13($id: ID!) {
+  node(id: $id) { id ... on User { ...SmallBenchmarkFragment8 } }
+}
+
+query SmallBenchmarkQuery14($id: ID!) {
+  node(id: $id) { id ... on User { ...SmallBenchmarkFragment9 } }
+}
+
+query SmallBenchmarkQuery15($id: ID!) {
+  node(id: $id) { id ... on User { name firstName lastName email } }
+}
+
+query SmallBenchmarkQuery16($id: ID!) {
+  node(id: $id) { id ... on Page { name likers { count } } }
+}
+
+query SmallBenchmarkQuery17($id: ID!) {
+  node(id: $id) { id ... on Comment { body { text } author { name } } }
+}
+
+query SmallBenchmarkQuery18($id: ID!) {
+  node(id: $id) { id ... on User { name profilePicture(size: 50) { uri } } }
+}
+
+query SmallBenchmarkQuery19($id: ID!) {
+  node(id: $id) { id ... on User { name profilePicture(size: 100) { uri } } }
+}
+
+fragment SmallBenchmarkFragment10 on User { id name }
+fragment SmallBenchmarkFragment11 on User { id firstName lastName }
+fragment SmallBenchmarkFragment12 on User { id email websites }
+fragment SmallBenchmarkFragment13 on Page { id name }
+fragment SmallBenchmarkFragment14 on Comment { id body { text } }
+
+query SmallBenchmarkQuery20($id: ID!) { node(id: $id) { id } }
+query SmallBenchmarkQuery21($id: ID!) { node(id: $id) { id ... on User { name } } }
+query SmallBenchmarkQuery22($id: ID!) { node(id: $id) { id ... on User { firstName } } }
+query SmallBenchmarkQuery23($id: ID!) { node(id: $id) { id ... on User { lastName } } }
+query SmallBenchmarkQuery24($id: ID!) { node(id: $id) { id ... on User { email } } }
+
+fragment SmallBenchmarkFragment15 on User { id ...SmallBenchmarkFragment10 }
+fragment SmallBenchmarkFragment16 on User { id ...SmallBenchmarkFragment11 }
+fragment SmallBenchmarkFragment17 on User { id ...SmallBenchmarkFragment12 }
+fragment SmallBenchmarkFragment18 on User { id ...SmallBenchmarkFragment10 ...SmallBenchmarkFragment11 }
+fragment SmallBenchmarkFragment19 on User { id ...SmallBenchmarkFragment10 ...SmallBenchmarkFragment12 }
+
+query SmallBenchmarkQuery25($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment15 } } }
+query SmallBenchmarkQuery26($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment16 } } }
+query SmallBenchmarkQuery27($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment17 } } }
+query SmallBenchmarkQuery28($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment18 } } }
+query SmallBenchmarkQuery29($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment19 } } }
+
+fragment SmallBenchmarkFragment20 on User { id name firstName lastName email }
+fragment SmallBenchmarkFragment21 on User { id ...SmallBenchmarkFragment20 }
+fragment SmallBenchmarkFragment22 on User { id profilePicture(size: 100) { uri width height } }
+fragment SmallBenchmarkFragment23 on User { id friends(first: 5) { edges { node { id name } } } }
+fragment SmallBenchmarkFragment24 on User { id ...SmallBenchmarkFragment22 ...SmallBenchmarkFragment23 }
+
+query SmallBenchmarkQuery30($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment20 } } }
+query SmallBenchmarkQuery31($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment21 } } }
+query SmallBenchmarkQuery32($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment22 } } }
+query SmallBenchmarkQuery33($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment23 } } }
+query SmallBenchmarkQuery34($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment24 } } }
+
+query SmallBenchmarkQuery35($id: ID!) { node(id: $id) { id ... on User { name } ... on Page { name } } }
+query SmallBenchmarkQuery36($id: ID!) { node(id: $id) { id ... on User { name } ... on Comment { body { text } } } }
+query SmallBenchmarkQuery37($id: ID!) { node(id: $id) { id ... on Actor { name } } }
+query SmallBenchmarkQuery38($id: ID!) { node(id: $id) { id ... on Named { name } } }
+query SmallBenchmarkQuery39($id: ID!) { node(id: $id) { id ... on Node { id } } }
+
+fragment SmallBenchmarkFragment25 on Actor { id name }
+fragment SmallBenchmarkFragment26 on Named { name }
+fragment SmallBenchmarkFragment27 on Node { id }
+fragment SmallBenchmarkFragment28 on User { id ...SmallBenchmarkFragment25 }
+fragment SmallBenchmarkFragment29 on User { id ...SmallBenchmarkFragment26 }
+
+query SmallBenchmarkQuery40($id: ID!) { node(id: $id) { id ...SmallBenchmarkFragment27 } }
+query SmallBenchmarkQuery41($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment25 } } }
+query SmallBenchmarkQuery42($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment26 } } }
+query SmallBenchmarkQuery43($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment28 } } }
+query SmallBenchmarkQuery44($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment29 } } }
+
+fragment SmallBenchmarkFragment30 on User { id name firstName }
+fragment SmallBenchmarkFragment31 on User { id name lastName }
+fragment SmallBenchmarkFragment32 on User { id ...SmallBenchmarkFragment30 ...SmallBenchmarkFragment31 }
+fragment SmallBenchmarkFragment33 on User { id hometown { id name } }
+fragment SmallBenchmarkFragment34 on User { id ...SmallBenchmarkFragment32 ...SmallBenchmarkFragment33 }
+
+query SmallBenchmarkQuery45($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment30 } } }
+query SmallBenchmarkQuery46($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment31 } } }
+query SmallBenchmarkQuery47($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment32 } } }
+query SmallBenchmarkQuery48($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment33 } } }
+query SmallBenchmarkQuery49($id: ID!) { node(id: $id) { id ... on User { ...SmallBenchmarkFragment34 } } }

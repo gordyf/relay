@@ -87,7 +87,12 @@ watchman_client = "0.9.0"
 zstd = { version = "0.13", features = ["experimental", "zstdmt"] }
 
 [dev-dependencies]
+criterion = "0.5"
 fixture-tests = { path = "../fixture-tests" }
 futures-util = { version = "0.3.30", features = ["compat"] }
 graphql-test-helpers = { path = "../graphql-test-helpers" }
 relay-test-schema = { path = "../relay-test-schema" }
+
+[[bench]]
+name = "compiler_bench"
+harness = false

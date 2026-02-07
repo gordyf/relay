@@ -31,3 +31,11 @@ members = [
     "crates/schema-validate",
     "crates/signedsource",
 ]
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true
+
+[profile.bench]
+inherits = "release"
+lto = "thin"
