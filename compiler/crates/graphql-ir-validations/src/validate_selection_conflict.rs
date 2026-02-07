@@ -254,15 +254,22 @@ impl<'s, B: LocationAgnosticBehavior + Sync> ValidateSelectionConflict<'s, B> {
         parent_fields_mutually_exclusive: bool,
     ) -> DiagnosticsResult<()> {
         let key = field.get_response_key(&self.program.schema);
-        if !fields.contains_key(&key) {
-            fields.entry(key).or_default().push(field.clone());
-            return Ok(());
-        }
+
+        // Use entry API to avoid double lookup
+        let existing_fields = match fields.get(&key) {
+            Some(existing) => existing,
+            None => {
+                fields.entry(key).or_default().push(field.clone());
+                return Ok(());
+            }
+        };
 
         let mut errors = vec![];
         let addr1 = field.pointer_address();
+        // Cache the field definition lookup outside the loop since it doesn't change
+        let r_definition = field.get_field_definition(&self.program.schema);
 
-        for existing_field in fields.get(&key).unwrap() {
+        for existing_field in existing_fields {
             if field == existing_field {
                 return if errors.is_empty() {
                     Ok(())
@@ -283,7 +290,6 @@ impl<'s, B: LocationAgnosticBehavior + Sync> ValidateSelectionConflict<'s, B> {
             }
 
             let l_definition = existing_field.get_field_definition(&self.program.schema);
-            let r_definition = field.get_field_definition(&self.program.schema);
 
             let is_parent_fields_mutually_exclusive = || {
                 parent_fields_mutually_exclusive
